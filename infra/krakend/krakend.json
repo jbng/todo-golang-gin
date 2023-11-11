@@ -1,0 +1,48 @@
+{
+  "$schema": "https://www.krakend.io/schema/krakend.json",
+  "version": 3,
+  "extra_config": {
+    "telemetry/logging": {
+      "level": "WARNING",
+      "prefix": "[KRAKEND]",
+      "stdout": true
+    }
+  },
+  "name": "todo-krakend",
+  "timeout": "3000ms",
+  "cache_ttl": "300s",
+  "output_encoding": "json",
+  "port": 5000,
+  "echo_endpoint": true,
+  "debug_endpoint": true,
+  "endpoints": [
+    {
+      "endpoint": "/todos/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/api/v1/todos/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://app:9000"]
+        }
+      ]
+    },
+    {
+      "endpoint": "/todos",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/api/v1/todos",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://app:9000"]
+        }
+      ]
+    }
+  ]
+}

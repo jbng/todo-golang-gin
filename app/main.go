@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,14 +13,22 @@ import (
 
 
 var db *gorm.DB
+
 func init() {
 	//open a db connection
 	var err error
-	dsn := "root:12345@/demo?charset=utf8&parseTime=True&loc=Local"
-db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	bin, err := os.ReadFile("/run/secrets/db-password")
+	if err != nil {
+		fmt.Println(err.Error())
+		panic("failed to read credentials")
+	}
+	dsn := fmt.Sprintf("root:%s@tcp(db:3306)/todo_golang_gin?charset=utf8&parseTime=True&loc=Local", string(bin))
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	
 	if err != nil {
 		panic("failed to connect database")
 	}
+	
 	//Migrate the schema
 	db.AutoMigrate(&todoModel{})
 }
@@ -126,5 +137,9 @@ func main() {
 		v1.PUT("/:id", updateTodo)
 		v1.DELETE("/:id", deleteTodo)
 	}
-	router.Run()
+	err := router.Run(":9000")
+	if err != nil {
+		panic("[Error] failed to start Gin server due to: " + err.Error())
+		return
+}
 }
