@@ -1,0 +1,45 @@
+services:
+  db:
+    container_name: mariadb
+    image: mariadb:lts-jammy
+    restart: always
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 --password="$$(cat /run/secrets/db-password)" --silent']
+      interval: 3s
+      retries: 5
+      start_period: 30s
+    secrets:
+      - db-password
+    volumes:
+      - ./infra/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+    ports:
+      - "3306:3306"
+
+  krakend:
+    container_name: krakend
+    image: devopsfaith/krakend:latest
+    volumes:
+      - ./infra/krakend:/etc/krakend
+    ports:
+      - "5000:5000"
+  
+  app:
+    container_name: todo-golang-gin-app
+    build: .
+    secrets:
+      - db-password
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: infra/mariadb/password.txt
