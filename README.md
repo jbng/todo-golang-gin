@@ -16,17 +16,30 @@ Experimentation with Golang, Gin, Docker Compose (v2), Mariadb, Krakend...
 
 [Compose](https://docs.docker.com/compose)
 
+[Viper](https://pkg.go.dev/github.com/spf13/viper)
 
 # Commands
 
 
-## Start project
+## run project
 
-`make start`
+`make dev` 
+
+or 
+
+`make prod`
 
 ## Clean
 
-`make stop`
+`make stop-dev`
+
+or
+
+`make stop-prod`
+
+## run database only
+
+`make db`
 
 ## Monitoring
 
@@ -42,3 +55,4 @@ Open bash console on a container
 
 `https://medium.com/@thedevsaddam/build-restful-api-service-in-golang-using-gin-gonic-framework-85b1a6e176f3`
 
+`https://chemidy.medium.com/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324`

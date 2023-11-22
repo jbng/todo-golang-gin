@@ -1,29 +1,42 @@
 ############################
 # STEP 1 build executable binary
 ############################
+ARG PORT
+ARG RELEASE
 FROM golang:alpine AS builder
+
 # Install git.
 # Git is required for fetching the dependencies.
 RUN apk update && apk add --no-cache git
 
-WORKDIR /app
+WORKDIR /home
 
 COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY ./app/*.go ./
+COPY ./app ./app
+COPY ./infra/config ./infra/config
+COPY ./infra/debug ./infra/debug
+COPY ./infra/mariadb ./infra/mariadb
+
+RUN ls ./app
 # Build the binary.
-RUN CGO_ENABLED=0 GOOS=linux go build -o /todo-golang-gin
+RUN RELEASE=$RELEASE && CGO_ENABLED=0 GOOS=linux go build -C ./app -o /home/todo-golang-gin
 
 ############################
 # STEP 2 build a small image
 ############################
 FROM scratch
 # Copy our static executable.
-COPY --from=builder /todo-golang-gin /todo-golang-gin
+COPY --from=builder /home/todo-golang-gin /todo-golang-gin
+COPY --from=builder /home/infra/config/.env /.env
+COPY --from=builder /home/infra/config/.env.dev /.env.dev
+COPY --from=builder /home/infra/config/.env.prod /.env.prod
 
-EXPOSE 9000
+CMD ./todo-golang-gin -port=$PORT
+
+EXPOSE $PORT
 
 # Run the todo-golang-gin binary.
-CMD ["/todo-golang-gin"]
+ENTRYPOINT ["/todo-golang-gin"]

@@ -34,8 +34,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      - PORT=${PORT:?error}
+      - RELEASE=${RELEASE:?error}
     ports:
-      - "9000:9000"
+      - "${PORT:?error}:9000"
 
 volumes:
   db-data:

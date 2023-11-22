@@ -1,6 +1,7 @@
 package main
 
 import (
+	// "flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,26 +10,46 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"todo-golang-gin/infra/config"
 )
 
-
 var db *gorm.DB
+var PORT int
 
 func init() {
-	//open a db connection
 	var err error
-	bin, err := os.ReadFile("/run/secrets/db-password")
+
+	conf, errConfig := config.Init()
+	if errConfig != nil {
+		fmt.Println("Error config", errConfig)
+	}
+	PORT = conf.GetInt("PORT")
+	fmt.Println("PORT is ", PORT)
+	DB_SECRETS_PATH := conf.GetString("DB_SECRETS_PATH")
+	fmt.Println("DB_SECRETS_PATH is ", DB_SECRETS_PATH)
+	DB_ADMIN := conf.GetString("DB_ADMIN")
+	fmt.Println("DB_ADMIN is ", DB_ADMIN)
+	DB_HOSTNAME := conf.GetString("DB_HOSTNAME")
+	fmt.Println("DB_NAME is ", DB_HOSTNAME)
+	DB_NAME := conf.GetString("DB_NAME")
+	fmt.Println("DB_NAME is ", DB_NAME)
+	//open a db connection
+
+	bin, err := os.ReadFile(DB_SECRETS_PATH)
+	
 	if err != nil {
 		fmt.Println(err.Error())
 		panic("failed to read credentials")
 	}
-	dsn := fmt.Sprintf("root:%s@tcp(db:3306)/todo_golang_gin?charset=utf8&parseTime=True&loc=Local", string(bin))
+	dsn := fmt.Sprintf("%s:%s@%s/%s", DB_ADMIN, string(bin), DB_HOSTNAME, DB_NAME)
+	fmt.Println("DSN is ", dsn)
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	
+
 	if err != nil {
 		panic("failed to connect database")
 	}
-	
+
 	//Migrate the schema
 	db.AutoMigrate(&todoModel{})
 }
@@ -128,7 +149,6 @@ func deleteTodo(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
-
 	v1 := router.Group("/api/v1/todos")
 	{
 		v1.POST("/", createTodo)
@@ -137,9 +157,9 @@ func main() {
 		v1.PUT("/:id", updateTodo)
 		v1.DELETE("/:id", deleteTodo)
 	}
-	err := router.Run(":9000")
+
+	err := router.Run(fmt.Sprintf(":%d", PORT))
 	if err != nil {
 		panic("[Error] failed to start Gin server due to: " + err.Error())
-		return
-}
+	}
 }
